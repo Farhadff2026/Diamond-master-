@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" id="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diamond App - Farhad (AI Pro Version)</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  
+  <style>
+    /* --- THEME ROOT VARIABLES --- */
+    :root {
+      --bg-gradient: linear-gradient(to bottom, #1e3c72, #2a5298);
+      --topbar-bg: #000000;
+      --topbar-text: #ffffff;
+      --card-text: #ffffff;
+      --box-bg: rgba(0, 0, 0, 0.4);
+      --text-main: #ffffff;
+      --input-bg: #ffffff;
+      --input-text: #000000;
+      --ai-window-bg: #ffffff;
+      --ai-window-text: #333333;
+      --ai-body-bg: #f0f2f5;
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: linear-gradient(to bottom, #e0eafc, #cfdef3);
+      --topbar-bg: #ffffff;
+      --topbar-text: #333333;
+      --card-text: #ffffff; 
+      --box-bg: rgba(255, 255, 255, 0.7);
+      --text-main: #2c3e50;
+      --input-bg: #f1f5f9;
+      --input-text: #333333;
+      --ai-window-bg: #ffffff;
+      --ai-window-text: #333333;
+      --ai-body-bg: #e2e8f0;
+    }
+
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg-gradient); background-attachment: fixed; color: var(--text-main); overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+    
+    /* GLOBAL APP INITIALIZING LOADER CONTAINER */
+    #appInitInterlockLoader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .spinner-gear { font-size: 50px; color: #ffff00; animation: spinGear 2s linear infinite; margin-bottom: 20px; }
+    @keyframes spinGear { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    #loginSection { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .loginBox { background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 15px; width: 85%; max-width: 320px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); }
+    .loginBox input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; color: #000; }
+    
+    .topbar { background: var(--topbar-bg); color: var(--topbar-text); padding: 15px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.3); position: relative; transition: background 0.3s, color 0.3s; }
+    .topbar-left { display: flex; align-items: center; }
+    .topbar-right { display: flex; align-items: center; gap: 15px; }
+    .menuBtn { font-size: 24px; cursor: pointer; margin-right: 15px; }
+    
+    .email-btn-container, .settings-btn-container, .account-btn-container { position: relative; cursor: pointer; font-size: 22px; color: #ffff00; transition: 0.2s; }
+    [data-theme="light"] .email-btn-container, [data-theme="light"] .settings-btn-container, [data-theme="light"] .account-btn-container { color: #1e3c72; }
+    .email-btn-container:active, .settings-btn-container:active, .account-btn-container:active { transform: scale(0.9); }
+    .notice-badge { position: absolute; top: 2px; right: -2px; width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; display: none; box-shadow: 0 0 8px #e74c3c; }
+    
+    .sidebar { position: fixed; top: 0; left: -260px; width: 220px; height: 100%; background: #111; padding: 20px; transition: 0.3s; z-index: 1000; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; }
+    .sidebar h3 { border-bottom: 2px solid #ffff00; padding-bottom: 10px; margin-bottom: 20px; color: #ffff00; }
+    .sidebar a { display: block; color: #fff; padding: 12px; text-decoration: none; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .sidebar a:active { background: #222; }
+    .sidebar a i { margin-right: 12px; font-size: 18px; width: 25px; text-align: center; }
+    
+    .content { padding: 20px 15px 80px 15px; text-align: center; }
+    .banner-container { width: 100%; height: 140px; overflow: hidden; border-radius: 15px; margin-bottom: 20px; background: #000; border: 2px solid rgba(255,255,255,0.1); position: relative; }
+    .banner-wrapper { display: flex; width: 300%; height: 100%; transition: transform 0.8s ease-in-out; }
+    .slide { width: 33.333%; height: 100%; background-size: 100% 100%; background-position: center; background-repeat: no-repeat; flex-shrink: 0; }
+    
+    .diamondBox { font-size: 26px; margin: 20px 0; padding: 20px; border: 2px solid #ffff00; border-radius: 20px; background: var(--box-bg); font-weight: bold; color: #ffff00; transition: background 0.3s; }
+    [data-theme="light"] .diamondBox { color: #1e3c72; border-color: #1e3c72; }
+    
+    .card { width: 90%; max-width: 350px; border-radius: 15px; padding: 20px; margin: 5px auto 15px auto; color: var(--card-text); box-sizing: border-box; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    button { padding: 12px 25px; margin-top: 10px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; background: #fff; color: #000; transition: 0.2s; }
+    button:active { transform: scale(0.95); }
+    button:disabled { background: #666 !important; color: #ccc; cursor: not-allowed; }
+    
+    #referPage { display: none; padding: 20px; text-align: center; }
+    .refer-container { background: var(--box-bg); padding: 20px; border-radius: 20px; border: 2px dashed #ffff00; margin-top: 20px; }
+    [data-theme="light"] .refer-container { border-color: #1e3c72; }
+    .refer-code-box { font-size: 24px; color: #ffff00; font-weight: bold; margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+    [data-theme="light"] .refer-code-box { color: #1e3c72; background: rgba(0,0,0,0.05); }
+    .refer-counter-badge { display: inline-block; background: #ffff00; color: #000; padding: 5px 15px; border-radius: 15px; font-size: 14px; font-weight: bold; margin-top: 5px; }
+    [data-theme="light"] .refer-counter-badge { background: #1e3c72; color: #fff; }
+    
+    .refer-list-box { background: var(--box-bg); border: 1px solid rgba(255,255,0,0.3); border-radius: 15px; padding: 15px; margin-top: 20px; text-align: left; }
+    .refer-list-title { font-size: 16px; color: #ffff00; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+    [data-theme="light"] .refer-list-title { color: #1e3c72; }
+    .refer-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #2ecc71; }
+    .refer-item-uid { font-weight: bold; font-size: 14px; color: var(--text-main); }
+    .refer-item-task { font-size: 11px; color: #aaa; }
+    
+    #aiPet { position: fixed; bottom: 100px; right: 20px; z-index: 6000; user-select: none; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5)); touch-action: none; display: inline-block; }
+    #aiPetSpan { font-size: 40px; cursor: grab; display: inline-block; line-height: 1; pointer-events: auto; }
+    #aiWindow { display: none; position: fixed; top: 10%; left: 5%; width: 90%; height: 75%; background: var(--ai-window-bg); color: var(--ai-window-text); z-index: 7000; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column; overflow: hidden; }
+    .ai-header { background: #000; color: #ffff00; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    #loginStreakDisplay { font-size: 11px; background: #444; color: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid #ffff00; margin-left: 10px; }
+    .ai-body { flex: 1; padding: 15px; overflow-y: auto; background: var(--ai-body-bg); display: flex; flex-direction: column; gap: 10px; }
+    .ai-footer { padding: 10px; display: flex; align-items: center; gap: 8px; border-top: 1px solid #ddd; background: #fff; }
+    .ai-footer input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 14px; color: #000; }
+    .ai-chat-bubble { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 14px; position: relative; line-height: 1.4; }
+    .ai-msg-container { display: flex; align-items: center; gap: 8px; align-self: flex-start; max-width: 85%; pointer-events: auto; }
+    .ai-msg { background: #fff; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: #333; max-width: 100%; }
+    .user-msg { background: #ffff00; color: #000; align-self: flex-end; font-weight: 500; }
+    .msg-speaker-btn { background: none; border: none; color: #1e3c72; font-size: 16px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: 0.2s; pointer-events: auto !important; position: relative; z-index: 10; }
+    .msg-speaker-btn:active { transform: scale(0.85); }
+    .voice-btn { background: none; border: none; color: #e74c3c; font-size: 18px; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: 0.2s; pointer-events: auto !important; position: relative; z-index: 10; }
+    .voice-btn.listening { color: #2ecc71; animation: voicePulse 1s infinite; }
+    @keyframes voicePulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .task-status { font-size: 12px; margin-top: 10px; color: #ffff00; font-weight: bold; }
+    
+    #adOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
+    .ad-timer-container { position: absolute; top: 15px; right: 15px; background: rgba(0, 0, 0, 0.7); border: 1px solid #ffff00; padding: 5px 12px; border-radius: 20px; color: #ffff00; font-weight: bold; font-size: 16px; min-width: 40px; text-align: center; z-index: 10002; }
+    #closeAdBtn { display: none; position: absolute; top: 15px; right: 15px; background: #e74c3c; color: #fff; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 18px; cursor: pointer; font-weight: bold; z-index: 10003; align-items: center; justify-content: center; }
+    .ad-iframe-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 10001; background: #000; }
+
+    .redeem-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+    .tab-btn { flex: 1; padding: 12px; font-weight: bold; font-size: 14px; border: 2px solid #ffff00; background: transparent; color: #ffff00; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-top: 0; }
+    [data-theme="light"] .tab-btn { border-color: #1e3c72; color: #1e3c72; }
+    .tab-btn.active { background: #ffff00; color: #000; }
+    [data-theme="light"] .tab-btn.active { background: #1e3c72; color: #fff; }
+    
+    .redeem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 5px; }
+    .redeem-card { border-radius: 15px; padding: 20px 10px; text-align: center; color: #fff; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+    .redeem-card:active { transform: scale(0.95); }
+    .redeem-card .cost-val { font-size: 22px; font-weight: bold; color: #ffff00; display: block; margin-bottom: 5px; }
+    .redeem-card .pkg-name { font-size: 13px; text-transform: uppercase; font-weight: 600; color: #fff; letter-spacing: 0.5px; display: block; min-height: 34px; }
+    .redeem-card .reward-tag { font-size: 11px; color: #2ecc71; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 10px; margin-top: 8px; display: inline-block; font-weight: bold; }
+    
+    #historyPage { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; color:#fff; z-index:5000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+    .history-item { background: linear-gradient(90deg, #1e293b 0%, #334155 100%); padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid #ffff00; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+    .history-item .pkg-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .history-item b { font-size: 16px; color: #ffff00; }
+    .status-badge { font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: bold; text-transform: uppercase; background: #f39c12; color: #fff; }
+    .status-badge.status-success { background: #2ecc71 !important; }
+    
+    .footer-nav { position: fixed; bottom: 0; width: 100%; background: #000; display: flex; justify-content: space-around; padding: 15px 0; border-top: 2px solid #ffff00; z-index: 500; }
+    [data-theme="light"] .footer-nav { background: #ffffff; border-top-color: #1e3c72; color: #1e3c72; font-weight: bold; }
+    
+    /* MODALS SYSTEM STYLE */
+    #redeemModal, #noticeModal, #settingsModal, #accountModal, #cropModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
+    .modal-box { background: #fff; color: #333; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-sizing: border-box; }
+    .modal-box input { width: 100%; padding: 12px; margin: 15px 0 5px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; text-align: center; color: #000; }
+    
+    .notice-box { background: #1e293b; color: #fff; padding: 20px; border-radius: 20px; width: 85%; max-width: 340px; border: 2px solid #ffff00; max-height: 80vh; overflow-y: auto; text-align: center; }
+    .notice-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 12px; text-align: left; position: relative; }
+    .notice-item h4 { margin: 0 0 5px 0; color: #ffff00; font-size: 16px; }
+    .notice-item p { margin: 0 0 10px 0; font-size: 13px; color: #ddd; line-height: 1.4; }
+    .gift-badge { display: inline-block; background: #2ecc71; color: #fff; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
+    .delete-notice-btn { position: absolute; top: 12px; right: 12px; background: transparent; color: #e74c3c; border: none; font-size: 16px; cursor: pointer; padding: 0; margin: 0; }
+    .hidden { display: none !important; }
+
+    /* SETTINGS MODAL INTERFACE COMPONENTS */
+    .settings-row { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; padding-bottom: 12px; border-bottom: 1px solid #eee; text-align: left; }
+    .settings-row span { font-weight: 600; font-size: 15px; color: #333; }
+    .sys-select, .toggle-switch-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; outline: none; background: #f8fafc; cursor: pointer; }
+
+    /* NO INTERNET OVERLAY SYSTEM */
+    #networkErrorOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; }
+    .net-icon { font-size: 55px; color: #e74c3c; margin-bottom: 25px; }
+
+    /* --- CUSTOM CSS SAD EMOJI FOR NO INTERNET SCREEN --- */
+    .net-emoji-container {
+        width: 110px;
+        height: 110px;
+        background-color: #cbd5e1;
+        border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+        margin: 0 auto 20px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: floatAnim 3s ease-in-out infinite;
+    }
+    .sad-face {
+        width: 65px;
+        height: 65px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    .eyes {
+        display: flex;
+        justify-content: space-between;
+        width: 34px;
+        margin-bottom: 10px;
+    }
+    .eye {
+        width: 11px;
+        height: 3px;
+        background-color: #475569;
+        border-radius: 2px;
+    }
+    .mouth {
+        width: 16px;
+        height: 8px;
+        border-left: 3.5px solid #475569;
+        border-right: 3.5px solid #475569;
+        border-top: 3.5px solid #475569;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    @keyframes floatAnim {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+    }
+
+    /* ACCOUNT VIEW WITH CUSTOM PROFILE GRAPHIC */
+    .account-profile-circle { width: 90px; height: 90px; background: #1e3c72; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #fff; font-size: 35px; border: 3px solid #ffff00; box-shadow: 0 4px 10px rgba(0,0,0,0.15); position: relative; overflow: hidden; cursor: pointer; }
+    .account-profile-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-upload-overlay { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.6); color: #ffff00; font-size: 10px; padding: 2px 0; text-align: center; font-weight: bold; }
+    .account-user-name { font-size: 18px; font-weight: bold; color: #1e3c72; margin: 5px 0 15px 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .account-user-name i { font-size: 14px; color: #555; cursor: pointer; }
+    .account-info-box { background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 15px; text-align: left; border: 1px solid #e2e8f0; }
+    .account-info-box .account-info-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #333; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px; }
+    .account-info-line:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .account-info-line b { color: #1e3c72; }
+    
+    /* CROP MODAL INNER SYSTEM */
+    .crop-container { width: 100%; max-height: 250px; background: #333; overflow: hidden; border-radius: 10px; margin-bottom: 15px; }
+    .crop-container img { max-width: 100%; display: block; }
+  </style>
+</head>
+<body>
+
+<div id="appInitInterlockLoader">
+  <div class="spinner-gear"><i class="fas fa-cog"></i></div>
+  <h3 style="color: #ffff00; margin: 0 0 10px 0;">Connecting Server...</h3>
+  <p style="color: #cbd5e1; font-size: 14px; margin: 0; padding: 0 20px;">দয়া করে অপেক্ষা করুন, ফায়ারবেস ডেটাবেস সার্ভারের সাথে সংযোগ স্থাপন করা হচ্ছে।</p>
+</div>
+
+<div id="networkErrorOverlay">
+  <div class="net-icon"><i class="fas fa-wifi-slash"></i></div>
+  <h2 id="netErrTitle" style="color: #ffff00; margin: 0 0 15px 0;">নো ইন্টারনেট কানেকশন!</h2>
+  
+  <div class="net-emoji-container">
+      <div class="sad-face">
+          <div class="eyes">
+              <div class="eye"></div>
+              <div class="eye"></div>
+          </div>
+          <div class="mouth"></div>
+      </div>
+  </div>
+
+  <p id="netErrDesc" style="color: #cbd5e1; max-width: 300px; font-size: 14px; margin: 5px 0 20px 0; line-height: 1.5;">আপনার ডিভাইসের ওয়াই-ফাই বা মোবাইল ডাটা চালু থাকলেও তাতে ইন্টারনেট সচল নেই। দয়া করে এমবি বা নেট ব্যালেন্স চেক করে আবার চেষ্টা করুন!</p>
+</div>
+
+<div id="loginSection" class="hidden" style="display: none !important;">
+  <div class="loginBox">
+    <h2 id="loginTitle" style="color:#ffff00; margin-bottom: 5px;">Login</h2>
+    <input type="number" id="loginUID" placeholder="Enter Game UID">
+    <button id="loginBtn" onclick="saveLogin()" style="background:#ffff00; width: 100%;">START EARNING</button>
+  </div>
+</div>
+
+<div id="aiPet" style="display: none;"><span id="aiPetSpan">🐈</span></div>
+<div id="aiWindow">
+  <div class="ai-header">
+    <div>Farhad AI <span id="loginStreakDisplay">Day 1</span></div> 
+    <span onclick="closeAI()" style="cursor:pointer; padding: 5px;">✖</span>
+  </div>
+  <div class="ai-body" id="aiBody">
+    <div class="ai-msg-container">
+      <div class="ai-chat-bubble ai-msg" id="initialMsg">হ্যালো! আমি আপনার AI পেট। প্রতিদিন অ্যাপ ব্যবহার করে আপনার স্ট্রেইক বজায় রাখুন!</div>
+      <button class="msg-speaker-btn" onclick="speakText(document.getElementById('initialMsg').innerText)"><i class="fas fa-volume-up"></i></button>
+    </div>
+  </div>
+  <div class="ai-footer">
+    <label class="file-label" for="aiImgInput" style="cursor:pointer; font-size: 20px;">🖼️</label>
+    <input type="file" id="aiImgInput" accept="image/*" style="display:none;" onchange="previewImage(this)">
+    <input type="text" id="aiInput" placeholder="কিছু একটা লিখুন...">
+    <button id="voiceBtn" class="voice-btn" onclick="toggleVoiceInput()"><i class="fas fa-microphone"></i></button>
+    <button onclick="askAI()" style="margin-top:0; padding: 10px; background: #000; color:#fff; border-radius: 50%; min-width: 45px;">➤</button>
+  </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+  <h3>Diamond App</h3>
+  <a onclick="showPage('home')"><i class="fas fa-home" style="color: #fff;"></i> <span class="lang-home">Home</span></a>
+  <a id="referSidebarBtn" onclick="showPage('refer')"><i class="fas fa-users" style="color: #00d2ff;"></i> <span class="lang-refer">Refer & Earn</span></a>
+  <a onclick="showPage('redeem')"><i class="fas fa-coins" style="color: #ffff00;"></i> <span class="lang-redeem">Redeem</span></a>
+  <a onclick="openHistory()"><i class="fas fa-history" style="color: #fff;"></i> <span class="lang-history">History</span></a>
+  
+  <p id="sidebarSupportTitle" style="color: #444; font-size: 10px; margin: 15px 0 5px 10px; text-transform: uppercase;">Support & Community</p>
+  <a id="waSupport" target="_blank"><i class="fab fa-whatsapp" style="color: #25D366;"></i> WhatsApp Support</a>
+  <a id="tgGroup" target="_blank"><i class="fab fa-telegram-plane" style="color: #0088cc;"></i> Telegram Group</a>
+  <a id="fbLink" target="_blank"><i class="fab fa-facebook" style="color: #1877F2;"></i> Facebook Page</a>
+  <a id="tiktokLink" target="_blank"><i class="fab fa-tiktok" style="color: #ff0050;"></i> TikTok Profile</a>
+  <a id="ytLink" target="_blank"><i class="fab fa-youtube" style="color: #FF0000;"></i> YouTube Channel</a>
+</div>
+
+<div id="mainApp" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="menuBtn" onclick="toggleMenu()">☰</span> 
+      <span id="topbarDashboardTitle">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="account-btn-container" onclick="openAccountModal()">
+        <i class="fas fa-user-gear"></i>
+      </div>
+      <div class="email-btn-container" onclick="openNoticeModal()">
+        <i class="fas fa-envelope"></i>
+        <div class="notice-badge" id="emailNoticeBadge"></div>
+      </div>
+      <div class="settings-btn-container" onclick="openSettingsModal()">
+        <i class="fas fa-gear"></i>
+      </div>
+    </div>
+  </div>
+  
+  <div id="homePage" class="content">
+    <div class="banner-container">
+      <div class="banner-wrapper" id="bannerWrapper">
+        <div class="slide" id="b1" style="background-color:#333"></div>
+        <div class="slide" id="b2" style="background-color:#444"></div>
+        <div class="slide" id="b3" style="background-color:#555"></div>
+      </div>
+    </div>
+    
+    <div class="diamondBox">
+      <small id="myBalanceLabel" style="font-size: 14px; display: block; color: var(--text-main);">My Balance</small>
+      💎 <span id="diamondCount">0</span>
+    </div>
+
+    <div class="card" id="dailyBonusCard" style="background: linear-gradient(45deg, #d4af37, #aa7c11); border: 2px solid #ffff00; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4); display: none;">
+      <h3 id="dailyBonusCardTitle">🎁 Daily Bonus</h3>
+      <button id="btnDailyBonus" onclick="claimDailyBonus()" style="background:#fff; color:#aa7c11; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">WATCH AD FOR BONUS (<span id="dailyBonusAmtDisplay">20</span> 💎)</button>
+      <div id="statusDailyBonus" class="task-status">আজকের বোনাস সংগ্রহ করুন!</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(45deg, #e74c3c, #c0392b);">
+      <h3>🎯 <span class="lang-task">Task</span> 1 (30s)</h3>
+      <button id="btnTask1" class="task-watch-btn" onclick="handleTask(1)">WATCH NOW (10 💎)</button>
+      <div id="statusTask1" class="task-status"></div>
+    </div>
+    <div class="card" style="background: linear-gradient(45deg, #3498db, #2980b9);">
+      <h3>📺 <span class="lang-task">Task</span> 2 (30s)</h3>
+      <button id="btnTask2" class="task-watch-btn" onclick="handleTask(2)">WATCH NOW (10 💎)</button>
+      <div id="statusTask2" class="task-status"></div>
+    </div>
+    <div class="card" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">
+      <h3>⚡ <span class="lang-task">Task</span> 3 (30s)</h3>
+      <button id="btnTask3" class="task-watch-btn" onclick="handleTask(3)">WATCH NOW (10 💎)</button>
+      <div id="statusTask3" class="task-status"></div>
+    </div>
+    <div class="card" style="background: linear-gradient(45deg, #2ecc71, #27ae60);">
+      <h3>💎 <span class="lang-task">Task</span> 4 (30s)</h3>
+      <button id="btnTask4" class="task-watch-btn" onclick="handleTask(4)">WATCH NOW (10 💎)</button>
+      <div id="statusTask4" class="task-status"></div>
+    </div>
+    <div class="card" style="background: linear-gradient(45deg, #f39c12, #e67e22);">
+      <h3>🔥 <span class="lang-task">Task</span> 5 (30s)</h3>
+      <button id="btnTask5" class="task-watch-btn" onclick="handleTask(5)">WATCH NOW (10 💎)</button>
+      <div id="statusTask5" class="task-status"></div>
+    </div>
+  </div>
+
+  <div id="referPage" class="content">
+    <h2 id="referHeadTitle" style="color:#ffff00;">Refer & Earn</h2>
+    <p id="referSubTitle">বন্ধুদের ইনভাইট করুন এবং বোনাস ডায়মন্ড পান!</p>
+    <div class="refer-container">
+      <p id="myReferCodeLabel">আপনার রেফার কোড:</p>
+      <div class="refer-code-box" id="myReferCode">-----</div>
+      <div class="refer-counter-badge" id="referCountDisplay">Total Referred: 0 / 10</div>
+      <br><br>
+      <button id="copyCodeBtn" onclick="copyRefer()" style="background:#ffff00; color:#000;">COPY CODE</button>
+    </div>
+    
+    <div class="refer-container" id="referInputContainer" style="border-style: solid; border-color: #2ecc71;">
+      <p id="useReferLabel">রেফার কোড ব্যবহার করুন:</p>
+      <input type="number" id="inputRefer" placeholder="বন্ধুর UID দিন" style="width: 80%; padding: 10px; border-radius: 10px; margin-bottom: 10px; color:#000;">
+      <br>
+      <button id="applyReferBtn" onclick="applyRefer()" style="background:#2ecc71; color:#fff;">APPLY REFER</button>
+      <p id="referWarningText" style="font-size: 11px; color: #ffff00; margin-top: 10px;">⚠️ কোড সাবমিট করার পর ১০টি অ্যাড দেখলে আপনাদের দুজনের ইনবক্সে বোনাস মেইল পাঠানো হবে এবং নিচে ক্লেইম অপশন চালু হবে!</p>
+    </div>
+
+    <div class="refer-list-box">
+      <div class="refer-list-title" id="referListTitleBox">
+        <i class="fas fa-list-ul"></i> আমার রেফারালসমূহ (My Referrals)
+      </div>
+      <div id="myReferralsListContainer">
+        <p style="text-align:center; color:#aaa; font-size:13px; margin: 10px 0;">কোনো ব্যবহারকারী এখনো আপনার কোড ব্যবহার করেনি।</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="redeemPage" class="content" style="display:none;">
+    <h2 id="redeemHeadTitle" style="color:#ffff00; margin-bottom: 15px; text-align: left;">Redeem Rewards</h2>
+    <div class="redeem-tabs">
+      <button id="tabDiamond" class="tab-btn active" onclick="switchRedeemTab('diamond')">💎 Game Diamond</button>
+      <button id="tabMoney" class="tab-btn" onclick="switchRedeemTab('money')">💵 Money / Recharge</button>
+    </div>
+    <div id="redeemNotice" style="font-size: 13px; margin-bottom: 15px; color:#ddd; text-align: left;"></div>
+    <div class="redeem-grid" id="redeemGrid"></div>
+  </div>
+</div>
+
+<div id="adOverlay">
+    <div class="ad-timer-container" id="timerBox" style="display:none;"><span id="adTimerDisplay">30</span>s</div>
+    <button id="closeAdBtn" onclick="finishAd()">✕</button>
+    <iframe id="adIframe" class="ad-iframe-container" src="" style="display:none;"></iframe>
+    <div id="adLoadingFallback" style="text-align:center; color:#fff; position: relative; z-index: 10000;">
+      <h2 id="adLoadingTitle" style="color: #ffff00;">Ad Loading...</h2>
+      <p id="adLoadingDesc">অপেক্ষা করুন এবং পয়েন্ট সংগ্রহ করুন।</p>
+    </div>
+</div>
+
+<div id="redeemModal">
+  <div class="modal-box">
+    <h3 id="pkgTitle" style="margin-bottom: 5px; color: #1e3c72;">Package Name</h3>
+    <p id="modalInputNotice" style="font-size:13px; margin:0; color:#555;">আইডি বা অ্যাকাউন্ট নম্বর দিন।</p>
+    <input type="text" id="targetAccountInput" placeholder="">
+    <div style="margin-top:15px; display:flex; gap: 10px;">
+      <button id="modalCancelBtn" onclick="closeModal()" style="background:#ddd; flex: 1; margin-top:0;">Cancel</button>
+      <button id="modalConfirmBtn" onclick="confirmRedeem()" style="background:#2ecc71; color:#fff; flex: 1; margin-top:0;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="noticeModal">
+  <div class="notice-box">
+    <h3 style="color:#ffff00; margin-top:0; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+      <span id="inboxModalTitle">✉️ Admin Inbox Mail</span>
+      <span onclick="closeNoticeModal()" style="cursor:pointer; font-size:18px;">✕</span>
+    </h3>
+    <div id="noticeListContainer" style="margin-top:15px;">
+      <p style="text-align:center; color:#aaa; font-size:13px;">কোনো নতুন নোটিশ বা গিফট নেই।</p>
+    </div>
+    <button id="inboxCloseBoxBtn" onclick="closeNoticeModal()" style="background:#ffff00; color:#000; width:100%; border-radius:10px; margin-top:10px;">Close Box</button>
+  </div>
+</div>
+
+<div id="settingsModal">
+  <div class="modal-box">
+    <h3 id="settingsModalTitle" style="margin-top:0; color:#1e3c72; border-bottom:2px solid #1e3c72; padding-bottom:8px;"><i class="fas fa-gear"></i> App Settings</h3>
+    
+    <div class="settings-row">
+      <span id="setRowThemeLabel">App Theme</span>
+      <button id="themeToggleBtn" class="toggle-switch-btn" onclick="toggleAppTheme()">Dark Mode</button>
+    </div>
+
+    <div class="settings-row">
+      <span id="setRowLangLabel">Language</span>
+      <select id="langSelectDropdown" class="sys-select" onchange="changeAppLanguage(this.value)">
+        <option value="bn">বাংলা (BN)</option>
+        <option value="en">English (EN)</option>
+      </select>
+    </div>
+
+    <button id="settingsCloseBtn" onclick="closeSettingsModal()" style="background:#1e3c72; color:#fff; width:100%; margin-top:10px; border-radius:20px;">Save & Close</button>
+  </div>
+</div>
+
+<div id="accountModal">
+  <div class="modal-box">
+    <h3 style="margin-top:0; color:#1e3c72; border-bottom:2px solid #1e3c72; padding-bottom:8px;"><i class="fas fa-user-circle"></i> My Account</h3>
+    
+    <div class="account-profile-circle" onclick="triggerProfilePicker()">
+      <img id="userAvatarDisplay" src="https://www.w3schools.com/howto/img_avatar.png" alt="Profile">
+      <div class="profile-upload-overlay">EDIT</div>
+    </div>
+    <input type="file" id="profileImageFileInput" accept="image/*" style="display:none;" onchange="handleProfileFileSelected(this)">
+
+    <div class="account-user-name">
+      <span id="displayNameTxt">User Name</span>
+      <i class="fas fa-edit" onclick="triggerChangeUserName()"></i>
+    </div>
+
+    <div class="account-info-box">
+      <div class="account-info-line">
+        <span>User Game UID:</span>
+        <b id="accModalUID">-----</b>
+      </div>
+      <div class="account-info-line">
+        <span>Total Balance:</span>
+        <b>💎 <span id="accModalDiamonds">0</span></b>
+      </div>
+      <div class="account-info-line">
+        <span>Referrals Count:</span>
+        <b id="accModalRefCount">0 / 10</b>
+      </div>
+    </div>
+
+    <button onclick="closeAccountModal()" style="background:#1e3c72; color:#fff; width:100%; border-radius:20px;">Close Dashboard</button>
+  </div>
+</div>
+
+<div id="cropModal">
+  <div class="modal-box" style="max-width: 350px;">
+    <h3 style="margin-top:0; color:#1e3c72;">Resize / Zoom Image</h3>
+    <div class="crop-container">
+      <img id="imageToCropDisplay" src="" alt="Resizing Element">
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button onclick="closeCropModal()" style="background:#ddd; flex:1; margin-top:0;">Cancel</button>
+      <button onclick="executeCropAndSave()" style="background:#2ecc71; color:#fff; flex:1; margin-top:0;">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<div id="historyPage">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 id="historyHeadTitle" style="margin: 0;">Redeem History</h2>
+    <button id="historyCloseBtn" onclick="closeHistory()" style="background:#e74c3c; color:#fff; border:none; padding:8px 20px; border-radius:20px; font-weight:bold; cursor:pointer;">Close</button>
+  </div>
+  <hr style="border: 0.5px solid #333; margin-bottom: 20px;">
+  <div id="userHistoryList"></div>
+</div>
+
+<div class="footer-nav">
+  <div onclick="showPage('home')" style="cursor:pointer;">🏠 <span class="lang-home">Home</span></div>
+  <div onclick="showPage('redeem')" style="cursor:pointer;">💰 <span class="lang-redeem">Redeem</span></div>
+  <div onclick="openHistory()" style="cursor:pointer;">📜 <span class="lang-history">History</span></div>
+</div>
+
+<script>
+const firebaseConfig = { databaseURL: "https://diamond-app-d2efd-default-rtdb.firebaseio.com" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let currentUID = localStorage.getItem("user_uid") || "";
+let userDiamonds = 0; let isRedeemOpen = true; let isMoneyOpen = true; 
+let adminMsg = "বর্তমানে রিডিম বন্ধ আছে।"; let moneyMsg = "বর্তমানে টাকা রিডিম বন্ধ আছে।";
+let isReferSystemEnabled = true; let taskConfigs = {}; let currentTaskId = 0;
+let selCost, selPkg, selPrice, selType; let selectedImgData = ""; let currentTab = "diamond"; 
+let diamondPkgs = []; let moneyPkgs = [];
+let referrerBonusAmt = 1; let refereeBonusAmt = 1;
+let activeCooldowns = {}; let latestTaskLogs = {}; let adLoadSuccess = false;
+
+let dailyBonusAmount = 20;
+let isDailyBonusEnabled = true;
+let isDailyBonusMode = false;
+
+let recognition = null;
+let isListening = false;
+let messageCounter = 0; 
+let globalCropperInstance = null;
+
+let currentSlideIndex = 0;
+let bannerIntervalId = null;
+
+let currentLang = localStorage.getItem("app_lang") || "bn";
+const localizationSchema = {
+  bn: {
+    home: "হোম", refer: "রেফার ও আয়", redeem: "রিডিম", history: "ইতিহাস",
+    dashboard: "ড্যাশবোর্ড", my_balance: "আমার ব্যালেন্স", watch_ad: "বোনাস পেতে অ্যাড দেখুন",
+    today: "আজ", watch_now: "এখনই দেখুন", limit_reached: "সীমা শেষ", wait: "অপেক্ষা করুন",
+    support_title: "সহায়তা ও কমিউনিটি", status_bonus_claim: "আজকের বোনাস সংগ্রহ করুন!",
+    status_bonus_wait: "রাত ১২টার পর আবার বোনাস চালু হবে।", refer_earn: "রেফার ও আর্ন",
+    refer_p1: "বন্ধুদের ইনভাইট করুন এবং বোনাস ডায়মন্ড পান!", refer_code_lbl: "আপনার রেফার কোড:",
+    copy_btn: "কোড কপি করুন", use_refer_lbl: "রেফার কোড ব্যবহার করুন:", placeholder_uid: "বন্ধুর UID দিন",
+    apply_btn: "কোড সাবমিট করুন", refer_warning: "⚠️ কোড সাবমিট করার পর ১০টি অ্যাড দেখলে আপনাদের দুজনের ইনবক্সে বোনাস মেইল পাঠানো হবে এবং নিচে ক্লেইম অপশন চালু হবে!",
+    refer_box_title: "আমার রেফারালসমূহ (My Referrals)", refer_empty: "কোনো ব্যবহারকারী এখনো আপনার কোড ব্যবহার করেনি।",
+    redeem_title: "পুরস্কার রিডিম করুন", ad_loading: "অ্যাড লোড হচ্ছে...", ad_desc: "অপেক্ষা করুন এবং পয়েন্ট সংগ্রহ করুন।",
+    modal_notice_money: "টাকা নেওয়ার জন্য নিচে বিকাশ/নগদ/রিচার্জ নম্বরটি দিন।", modal_placeholder_money: "মোবাইল নম্বরটি লিখুন",
+    modal_notice_diamond: "ডায়মন্ড নেওয়ার জন্য আপনার ফ্রি ফায়ার প্লেয়ার UID কোডটি দিন।", modal_placeholder_ff: "গেম UID কোডটি লিখুন",
+    cancel: "বাতির", confirm: "নিশ্চিত করুন", inbox_title: "✉️ Admin Inbox Mail", inbox_empty: "কোনো নতুন নোটিশ বা গিফট মেইল নেই।",
+    close_box: "বক্স বন্ধ করুন", net_title: "নো ইন্টারনেট কানেকশন!", net_desc: "আপনার ডিভাইসের নেটওয়ার্ক সচল নেই। দয়া করে ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন!",
+    settings_title: "앱 সেটিংস", setting_theme: "থিম মোড", setting_lang: "ভাষা নির্বাচন", dark_mode: "ডার্ক মোড", light_mode: "লাইট মোড", save_close: "সংরক্ষণ ও বন্ধ করুন"
+  },
+  en: {
+    home: "Home", refer: "Refer & Earn", redeem: "Redeem", history: "History",
+    dashboard: "Dashboard", my_balance: "My Balance", watch_ad: "WATCH AD FOR BONUS",
+    today: "Today", watch_now: "WATCH NOW", limit_reached: "LIMIT REACHED", wait: "Wait",
+    support_title: "Support & Community", status_bonus_claim: "Claim your daily bonus now!",
+    status_bonus_wait: "Bonus will reset after midnight.", refer_earn: "Refer & Earn",
+    refer_p1: "Invite your friends and get bonus diamonds!", refer_code_lbl: "Your Referral Code:",
+    copy_btn: "COPY CODE", use_refer_lbl: "Use Referral Code:", placeholder_uid: "Enter friend's UID",
+    apply_btn: "APPLY REFER", refer_warning: "⚠️ After submitting code and watching 10 ads, both of you will receive a bonus in your mailboxes!",
+    refer_box_title: "My Referrals", refer_empty: "No user has used your code yet.",
+    redeem_title: "Redeem Rewards", ad_loading: "Ad Loading...", ad_desc: "Please wait to gather points safely.",
+    modal_notice_money: "Enter your bKash/Nagad/Recharge mobile number below.", modal_placeholder_money: "Enter mobile number",
+    modal_notice_diamond: "Enter your Free Fire Player UID code below.", modal_placeholder_ff: "Enter game UID code",
+    cancel: "Cancel", confirm: "Confirm", inbox_title: "✉️ Admin Inbox Mail", inbox_empty: "No new notifications or gift mails found.",
+    close_box: "Close Box", net_title: "No Internet Connection!", net_desc: "Your device has no internet capability. Please verify balance or configurations!",
+    settings_title: "App Settings", setting_theme: "App Theme", setting_lang: "Language", dark_mode: "Dark Mode", light_mode: "Light Mode", save_close: "Save & Close"
+  }
+};
+
+let isServerOnline = false;
+
+function initRealtimeNetworkTracker() {
+  db.ref(".info/connected").on("value", function(snapshot) {
+    if (snapshot.val() === true && navigator.onLine) {
+      isServerOnline = true;
+      document.getElementById("networkErrorOverlay").style.display = "none";
+    } else {
+      isServerOnline = false;
+      document.getElementById("networkErrorOverlay").style.display = "flex";
+    }
+  });
+  
+  window.addEventListener('online', () => {
+    db.ref(".info/connected").once('value', s => {
+      if(s.val() === true) { isServerOnline = true; document.getElementById("networkErrorOverlay").style.display = "none"; }
+    });
+  });
+  window.addEventListener('offline', () => { isServerOnline = false; document.getElementById("networkErrorOverlay").style.display = "flex"; });
+}
+
+// APP INITIALIZER INTERLOCK ON WINDOW LOAD
+window.onload = function() {
+  initRealtimeNetworkTracker(); 
+  applySystemThemeOnInit();
+  applyLanguageLocalization();
+  initAIPet();
+  initSpeechRecognition();
+  startBannerAutoSlider();
+
+  // ফায়ারবেস ডেটা কানেক্ট ও লক চেকিং মেকানিজম
+  db.ref("settings").once("value").then(snapshot => {
+    // ফায়ারবেস থেকে সফলভাবে রেসপন্স বা ডেটা ম্যাপ সম্পন্ন হলে ইন্টারলক স্ক্রিন রিমুভ হবে
+    document.getElementById("appInitInterlockLoader").style.setProperty("display", "none", "important");
+    
+    if (currentUID) {
+      // যদি আগে থেকেই UID সেভ করা থাকে - সরাসরি ড্যাশবোর্ড লোড হবে
+      document.getElementById("loginSection").style.setProperty("display", "none", "important");
+      document.getElementById("loginSection").classList.add("hidden");
+      startApp(); 
+      handleLoginStreak();
+      document.getElementById("myReferCode").innerText = currentUID;
+      
+      db.ref(`users/${currentUID}/referCount`).on('value', s => {
+        let rCount = s.val() || 0;
+        document.getElementById("referCountDisplay").innerText = `Total Referred: ${rCount} / 10`;
+        document.getElementById("accModalRefCount").innerText = `${rCount} / 10`;
+      });
+      
+      db.ref(`users/${currentUID}/usedRefer`).on('value', s => {
+        let inputContainer = document.getElementById("referInputContainer");
+        if (s.val() || false) inputContainer.style.display = "none";
+        else if(isReferSystemEnabled) inputContainer.style.display = "block"; 
+      });
+
+      db.ref(`users/${currentUID}/name`).on('value', s => {
+        document.getElementById("displayNameTxt").innerText = s.val() || "User_" + currentUID;
+      });
+      
+      db.ref(`users/${currentUID}/profile_picture`).on('value', s => {
+        if(s.val()) document.getElementById("userAvatarDisplay").src = s.val();
+      });
+      
+      listenToInboxMessages();
+      checkDailyBonusStatus();
+      listenToMyReferrals();
+    } else {
+      // যদি প্রথমবার হয় তবেই কেবল লগইন সেকশন দেখাবে
+      document.getElementById("loginSection").style.removeProperty("display");
+      document.getElementById("loginSection").classList.remove("hidden");
+    }
+  }).catch(error => {
+    console.error("Firebase Initialization Interlock Alert: ", error);
+    document.getElementById("appInitInterlockLoader").innerHTML = `<div class="spinner-gear" style="animation:none; color:#e74c3c;"><i class="fas fa-exclamation-triangle"></i></div><h3 style="color:#e74c3c;">Server Error!</h3><p style="color:#fff; padding:0 20px;">ফায়ারবেস কানেকশন ব্যর্থ হয়েছে। আপনার ডেটাবেস রুলস বা কনфিগ চেক করুন।</p>`;
+  });
+}
+
+function startBannerAutoSlider() {
+  if(bannerIntervalId) clearInterval(bannerIntervalId);
+  bannerIntervalId = setInterval(() => {
+    const wrapper = document.getElementById("bannerWrapper");
+    if(wrapper) {
+      currentSlideIndex++;
+      if(currentSlideIndex >= 3) {
+        currentSlideIndex = 0;
+      }
+      let shiftX = -(currentSlideIndex * 33.333);
+      wrapper.style.transform = `translateX(${shiftX}%)`;
+    }
+  }, 3000);
+}
+
+function applySystemThemeOnInit() {
+  const systemSavedTheme = localStorage.getItem("app_theme") || "dark";
+  document.documentElement.setAttribute("data-theme", systemSavedTheme);
+  const themeBtn = document.getElementById("themeToggleBtn");
+  if(themeBtn) {
+    themeBtn.innerText = systemSavedTheme === "dark" ? localizationSchema[currentLang].dark_mode : localizationSchema[currentLang].light_mode;
+  }
+}
+
+function toggleAppTheme() {
+  let currentThemeState = document.documentElement.getAttribute("data-theme") || "dark";
+  let targetTheme = (currentThemeState === "dark") ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", targetTheme);
+  localStorage.setItem("app_theme", targetTheme);
+  document.getElementById("themeToggleBtn").innerText = targetTheme === "dark" ? localizationSchema[currentLang].dark_mode : localizationSchema[currentLang].light_mode;
+}
+
+function openSettingsModal() {
+  document.getElementById("langSelectDropdown").value = currentLang;
+  document.getElementById("settingsModal").style.display = "flex";
+}
+
+function closeSettingsModal() {
+  document.getElementById("settingsModal").style.display = "none";
+}
+
+function openAccountModal() {
+  if(!isServerOnline) return;
+  document.getElementById("accModalUID").innerText = currentUID;
+  document.getElementById("accModalDiamonds").innerText = userDiamonds;
+  document.getElementById("accountModal").style.display = "flex";
+}
+
+function closeAccountModal() {
+  document.getElementById("accountModal").style.display = "none";
+}
+
+function triggerProfilePicker() {
+  document.getElementById("profileImageFileInput").click();
+}
+
+function handleProfileFileSelected(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imgToCrop = document.getElementById("imageToCropDisplay");
+      imgToCrop.src = e.target.result;
+      document.getElementById("cropModal").style.display = "flex";
+      
+      if(globalCropperInstance) globalCropperInstance.destroy();
+      
+      globalCropperInstance = new Cropper(imgToCrop, {
+        aspectRatio: 1,
+        viewMode: 1,
+        background: false,
+        autoCropArea: 1,
+        responsive: true
+      });
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function executeCropAndSave() {
+  if(!globalCropperInstance) return;
+  const canvas = globalCropperInstance.getCroppedCanvas({
+    width: 200,
+    height: 200
+  });
+  
+  const base64ImageData = canvas.toDataURL("image/jpeg", 0.7);
+  document.getElementById("userAvatarDisplay").src = base64ImageData;
+  
+  if (isServerOnline && currentUID) {
+    db.ref(`users/${currentUID}/profile_picture`).set(base64ImageData)
+      .then(() => { closeCropModal(); })
+      .catch(err => alert("Failed to upload image structure: " + err.message));
+  } else {
+    closeCropModal();
+  }
+}
+
+function closeCropModal() {
+  document.getElementById("cropModal").style.display = "none";
+  if(globalCropperInstance) {
+    globalCropperInstance.destroy();
+    globalCropperInstance = null;
+  }
+  document.getElementById("profileImageFileInput").value = "";
+}
+
+function triggerChangeUserName() {
+  const newUsername = prompt("আপনার নাম লিখুন:", document.getElementById("displayNameTxt").innerText);
+  if (newUsername !== null && newUsername.trim() !== "") {
+    if(isServerOnline && currentUID) {
+      db.ref(`users/${currentUID}/name`).set(newUsername.trim())
+        .catch(err => alert("Could not save name structure: " + err.message));
+    } else {
+      document.getElementById("displayNameTxt").innerText = newUsername.trim();
+    }
+  }
+}
+
+function changeAppLanguage(selectedLangValue) {
+  currentLang = selectedLangValue;
+  localStorage.setItem("app_lang", selectedLangValue);
+  applyLanguageLocalization();
+  refreshButtonsUI();
+  updateNoticeText();
+}
+
+function applyLanguageLocalization() {
+  const dictionary = localizationSchema[currentLang];
+  
+  document.querySelectorAll(".lang-home").forEach(el => el.innerText = dictionary.home);
+  document.querySelectorAll(".lang-refer").forEach(el => el.innerText = dictionary.refer);
+  document.querySelectorAll(".lang-redeem").forEach(el => el.innerText = dictionary.redeem);
+  document.querySelectorAll(".lang-history").forEach(el => el.innerText = dictionary.history);
+  document.getElementById("sidebarSupportTitle").innerText = dictionary.support_title;
+
+  document.getElementById("topbarDashboardTitle").innerText = dictionary.dashboard;
+  document.getElementById("myBalanceLabel").innerText = dictionary.my_balance;
+
+  document.getElementById("netErrTitle").innerText = dictionary.net_title;
+  document.getElementById("netErrDesc").innerText = dictionary.net_desc;
+
+  document.getElementById("dailyBonusCardTitle").innerText = "🎁 " + dictionary.home + " Bonus";
+  document.querySelectorAll(".lang-task").forEach(el => el.innerText = "Task");
+  
+  document.getElementById("referHeadTitle").innerText = dictionary.refer_earn;
+  document.getElementById("referSubTitle").innerText = dictionary.refer_p1;
+  document.getElementById("myReferCodeLabel").innerText = dictionary.refer_code_lbl;
+  document.getElementById("copyCodeBtn").innerText = dictionary.copy_btn;
+  document.getElementById("useReferLabel").innerText = dictionary.use_refer_lbl;
+  document.getElementById("inputRefer").placeholder = dictionary.placeholder_uid;
+  document.getElementById("applyReferBtn").innerText = dictionary.apply_btn;
+  document.getElementById("referWarningText").innerText = dictionary.refer_warning;
+  document.getElementById("referListTitleBox").innerHTML = `<i class="fas fa-list-ul"></i> ${dictionary.refer_box_title}`;
+
+  document.getElementById("redeemHeadTitle").innerText = dictionary.redeem_title;
+  document.getElementById("adLoadingTitle").innerText = dictionary.ad_loading;
+  document.getElementById("adLoadingDesc").innerText = dictionary.ad_desc;
+  
+  document.getElementById("modalCancelBtn").innerText = dictionary.cancel;
+  document.getElementById("modalConfirmBtn").innerText = dictionary.confirm;
+  document.getElementById("inboxModalTitle").innerText = dictionary.inbox_title;
+  document.getElementById("inboxCloseBoxBtn").innerText = dictionary.close_box;
+  
+  document.getElementById("settingsModalTitle").innerHTML = `<i class="fas fa-gear"></i> ${dictionary.settings_title}`;
+  document.getElementById("setRowThemeLabel").innerText = dictionary.setting_theme;
+  document.getElementById("setRowLangLabel").innerText = dictionary.setting_lang;
+  document.getElementById("settingsCloseBtn").innerText = dictionary.save_close;
+  
+  let themeState = document.documentElement.getAttribute("data-theme") || "dark";
+  document.getElementById("themeToggleBtn").innerText = themeState === "dark" ? dictionary.dark_mode : dictionary.light_mode;
+  
+  document.getElementById("loginTitle").innerText = dictionary.home + " / Login";
+  document.getElementById("loginBtn").innerText = dictionary.watch_now;
+}
+
+function speakText(text) {
+  if (!isServerOnline) return;
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); 
+    
+    setTimeout(() => {
+      const standardUtterance = new SpeechSynthesisUtterance(text);
+      standardUtterance.lang = 'bn-BD';
+      standardUtterance.pitch = 1.15;
+      standardUtterance.rate = 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const banglaVoice = voices.find(voice => voice.lang.includes('bn') || voice.name.includes('Google') || voice.name.includes('Bengali'));
+      if (banglaVoice) standardUtterance.voice = banglaVoice;
+      
+      window.speechSynthesis.speak(standardUtterance);
+    }, 50);
+  }
+}
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'bn-BD';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    recognition.onstart = function() {
+      isListening = true;
+      const vBtn = document.getElementById("voiceBtn");
+      if (vBtn) {
+        vBtn.classList.add("listening");
+        vBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+      }
+      document.getElementById("aiInput").placeholder = "বলুন, আমি শুনছি...";
+    };
+    
+    recognition.onresult = function(event) {
+      if (event.results && event.results[0] && event.results[0][0]) {
+        const textResult = event.results[0][0].transcript;
+        document.getElementById("aiInput").value = textResult;
+      }
+    };
+    
+    recognition.onerror = function(e) {
+      console.error("Speech Recognition Error: ", e);
+      stopVoiceListening();
+    };
+    
+    recognition.onend = function() {
+      stopVoiceListening();
+    };
+  } else {
+    document.getElementById("voiceBtn").style.display = "none";
+  }
+}
+
+function toggleVoiceInput() {
+  if (!isServerOnline || !recognition) return;
+  if (isListening) {
+    recognition.stop();
+  } else {
+    try {
+      window.speechSynthesis.cancel(); 
+      recognition.start();
+    } catch (e) { 
+      console.error(e); 
+      stopVoiceListening();
+    }
+  }
+}
+
+function stopVoiceListening() {
+  isListening = false;
+  const vBtn = document.getElementById("voiceBtn");
+  if(vBtn) { 
+    vBtn.classList.remove("listening"); 
+    vBtn.innerHTML = '<i class="fas fa-microphone"></i>'; 
+  }
+  const aiInp = document.getElementById("aiInput");
+  if(aiInp && aiInp.value === "") aiInp.placeholder = "কিছু একটা লিখুন...";
+}
+
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) { selectedImgData = e.target.result; document.getElementById("aiInput").placeholder = "Image selected!"; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// স্থানীয় স্মার্ট চ্যাট রেসপন্স মেকানিজম (AI-কে বুদ্ধিমান করার জন্য)
+function getSmartAIResponse(userMessage) {
+  const msg = userMessage.toLowerCase().trim();
+  
+  if (msg.includes("হাই") || msg.includes("হ্যালো") || msg.includes("hello") || msg.includes("hi")) {
+    return "হ্যালো! আমি আপনার পোষা এআই বিড়াল। বলুন, আজ আপনাকে কীভাবে সাহায্য করতে পারি? 🐾";
+  }
+  if (msg.includes("কেমন আছো") || msg.includes("কেমন আছেন") || msg.includes("how are you")) {
+    return "আমি খুব ভালো আছি! আপনি কেমন আছেন? অ্যাপে কাজ করে আজ কত ডায়মন্ড জমালেন? 😊";
+  }
+  if (msg.includes("কি করো") || msg.includes("কি করছ") || msg.includes("what are you doing")) {
+    return "এই তো, আপনার সাথে গল্প করছি আর আপনার জন্য ডায়মন্ডের হিসাব রাখছি! 💎";
+  }
+  if (msg.includes("তোমার নাম কি") || msg.includes("তোমার নাম কি?") || msg.includes("what is your name")) {
+    return "আমার নাম ফরহাদ এআই (Farhad AI)! আমি এই অ্যাপের স্মার্ট অ্যাসিস্ট্যান্ট। 🐱";
+  }
+  if (msg.includes("কে তোমাকে বানিয়েছে") || msg.includes("তোমার মালিক কে")) {
+    return "আমাকে ডেভেলপার ফারহাদ তৈরি করেছেন। তিনি অত্যন্ত চমৎকার একজন প্রোগ্রামার! 💻";
+  }
+  if (msg.includes("ধন্যবাদ") || msg.includes("thanks")) {
+    return "আপনাকেও অনেক ধন্যবাদ! আমার সাথে কথা বলে ভালো লাগলো। ❤️";
+  }
+  if (msg.includes("ভালো") || msg.includes("আমি ভালো")) {
+    return "শুনে খুব ভালো লাগলো! সুস্থ থাকুন এবং বেশি বেশি ডায়মন্ড আর্ন করুন। 🌟";
+  }
+  
+  // কোনো নির্দিষ্ট কন্ডিশন না মিললে ডিফল্ট ডাইনামিক রেসপন্স
+  return "আপনার মেসেজটি আমি পেয়েছি। '" + userMessage + "' এর ব্যাপারে আমি চিন্তা করছি! আমি প্রতিনিয়ত আপনার কাছ থেকে নতুন কিছু শিখছি! 🚀";
+}
+
+function askAI() {
+  if (!isServerOnline) return;
+  const input = document.getElementById("aiInput"); const body = document.getElementById("aiBody"); const msg = input.value.trim();
+  if (!msg && !selectedImgData) return;
+  
+  let userMsgHTML = `<div class="ai-chat-bubble user-msg">`;
+  if (selectedImgData) userMsgHTML += `<img src="${selectedImgData}" style="max-width:150px; border-radius:10px; display:block; margin-top:5px;"><br>`;
+  if (msg) userMsgHTML += msg;
+  userMsgHTML += `</div>`;
+  body.innerHTML += userMsgHTML; input.value = ""; input.placeholder = "কিছু একটা লিখুন..."; selectedImgData = "";
+  document.getElementById("aiImgInput").value = "";
+  body.scrollTop = body.scrollHeight;
+
+  setTimeout(() => { 
+    messageCounter++;
+    // স্মার্ট চ্যাট ফাংশন কল করে উত্তর নির্ধারণ করা হচ্ছে
+    const replyText = getSmartAIResponse(msg);
+    let aiResponseHTML = `
+      <div class="ai-msg-container">
+        <div class="ai-chat-bubble ai-msg" id="aiMsg_${messageCounter}">${replyText}</div>
+        <button class="msg-speaker-btn" onclick="speakText(document.getElementById('aiMsg_${messageCounter}').innerText); event.stopPropagation();">
+          <i class="fas fa-volume-up"></i>
+        </button>
+      </div>`;
+    body.innerHTML += aiResponseHTML; 
+    body.scrollTop = body.scrollHeight; 
+  }, 1000);
+}
+
+function handleLoginStreak() {
+  const streakRef = db.ref(`users/${currentUID}/streak`); const today = new Date().toDateString();
+  streakRef.once('value', s => {
+    let data = s.val() || { count: 0, lastDate: "" };
+    if (data.lastDate !== today) {
+      let newCount = (data.count || 0) + 1; streakRef.update({ count: newCount, lastDate: today });
+      document.getElementById("loginStreakDisplay").innerText = "Day " + newCount;
+    } else document.getElementById("loginStreakDisplay").innerText = "Day " + data.count;
+  });
+}
+
+function initAIPet() {
+  const container = document.getElementById("aiPet"); const petSpan = document.getElementById("aiPetSpan");
+  container.style.display = "inline-block";
+  let isDragging = false, offsetX, offsetY, hasDragged = false;
+  
+  const start = (e) => { 
+    isDragging = true; 
+    hasDragged = false; 
+    const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX; 
+    const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; 
+    offsetX = x - container.offsetLeft; 
+    offsetY = y - container.offsetTop; 
+  };
+  
+  const move = (e) => { 
+    if (!isDragging) return; 
+    hasDragged = true; 
+    const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX; 
+    const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; 
+    container.style.left = (x - offsetX) + "px"; 
+    container.style.top = (y - offsetY) + "px"; 
+  };
+  
+  const end = () => { isDragging = false; };
+  
+  petSpan.addEventListener('mousedown', start); 
+  petSpan.addEventListener('touchstart', start, { passive: true });
+  window.addEventListener('mousemove', move); 
+  window.addEventListener('touchmove', move, { passive: false });
+  window.addEventListener('mouseup', end); 
+  window.addEventListener('touchend', end);
+  
+  petSpan.addEventListener('click', (e) => { 
+    if (!hasDragged && isServerOnline) { 
+      document.getElementById("aiWindow").style.display = "flex"; 
+    } 
+  });
+}
+function closeAI() { document.getElementById("aiWindow").style.display = "none"; if('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+
+function saveLogin() {
+  if(!isServerOnline) return;
+  let uid = document.getElementById("loginUID").value.trim();
+  if (uid.length >= 5) {
+    localStorage.setItem("user_uid", uid); currentUID = uid;
+    db.ref('users/' + currentUID).once('value', s => {
+      if (!s.exists()) db.ref('users/' + currentUID).set({ uid: currentUID, name: "User_" + uid, diamonds: 0, usedRefer: false, referCount: 0, referTaskCount: 0, referredBy: "" });
+      location.reload();
+    });
+  } else alert("সঠিক UID দিন!");
+}
+
+function startApp() {
+  document.getElementById("loginSection").style.setProperty("display", "none", "important");
+  document.getElementById("loginSection").classList.add("hidden"); 
+  document.getElementById("mainApp").style.display = "block";
+  db.ref('users/' + currentUID + '/diamonds').on('value', s => { 
+    userDiamonds = s.val() || 0; 
+    document.getElementById("diamondCount").innerText = userDiamonds; 
+    let modalDCount = document.getElementById("accModalDiamonds");
+    if(modalDCount) modalDCount.innerText = userDiamonds;
+  });
+  loadConfigs();
+}
+
+function toggleMenu() {
+  const sidebar = document.getElementById("sidebar");
+  sidebar.style.left = (sidebar.style.left === "0px") ? "-260px" : "0px";
+}
+
+function showPage(pageId) {
+  document.getElementById("homePage").style.display = "none";
+  document.getElementById("referPage").style.display = "none";
+  document.getElementById("redeemPage").style.display = "none";
+  
+  if (pageId === 'home') document.getElementById("homePage").style.display = "block";
+  if (pageId === 'refer') document.getElementById("referPage").style.display = "block";
+  if (pageId === 'redeem') document.getElementById("redeemPage").style.display = "block";
+  
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) sidebar.style.left = "-260px";
+}
+
+function openNoticeModal() { document.getElementById("noticeModal").style.display = "flex"; }
+function closeNoticeModal() { document.getElementById("noticeModal").style.display = "none"; }
+function closeModal() { document.getElementById("redeemModal").style.display = "none"; }
+function closeHistory() { document.getElementById("historyPage").style.display = "none"; }
+
+function copyRefer() { navigator.clipboard.writeText(document.getElementById("myReferCode").innerText); alert(localizationSchema[currentLang].copy_btn + " Done!"); }
+
+function applyRefer() {
+  if(!isServerOnline) return alert("ইন্টারনেট কানেকশন চেক করুন!");
+  if(!isReferSystemEnabled) return alert("বর্তমানে রেফার সিস্টেম বন্ধ আছে।");
+  const code = document.getElementById("inputRefer").value.trim();
+  if(!code || code === currentUID) return alert("নিজের কোড নিজে ব্যবহার করা যাবে না।");
+  db.ref('users/' + currentUID).once('value', s => {
+    if(s.val() && s.val().usedRefer) return alert("আপনি ইতিমধ্যে একটি রেফার কোড ব্যবহার করেছেন!");
+    db.ref('users/' + code).once('value', rs => {
+      if(rs.exists()) {
+        if((rs.val().referCount || 0) >= 10) return alert("রেফারেল লিমিট শেষ!");
+        db.ref('users/' + currentUID).update({ usedRefer: true, referredBy: code, referTaskCount: 0 });
+        alert("সফল হয়েছে! ১০টি অ্যাড দেখুন।"); document.getElementById("inputRefer").value = "";
+      } else alert("ভুল কোড!");
+    });
+  });
+}
+
+function loadConfigs() {
+  db.ref('settings').on('value', s => {
+    const d = s.val();
+    if(d) {
+      isRedeemOpen = d.redeemOpen ?? true; adminMsg = d.redeemMsg || "বর্তমানে গেম ডায়মন্ড রিডিম বন্ধ আছে।";
+      if(d.money_config) { isMoneyOpen = d.money_config.enabled ?? true; moneyMsg = d.money_config.msg || "বর্তমানে টাকা রিডিম বন্ধ আছে।"; }
+      updateNoticeText();
+      if(d.refer_config) {
+        isReferSystemEnabled = d.refer_config.enabled; referrerBonusAmt = d.refer_config.referrerBonus ?? 1; refereeBonusAmt = d.refer_config.refereeBonus ?? 1;
+        document.getElementById("referSidebarBtn").style.display = isReferSystemEnabled ? "block" : "none";
+        document.getElementById("referInputContainer").style.display = isReferSystemEnabled ? "block" : "none";
+      }
+      
+      if(d.daily_bonus_amount !== undefined) {
+        dailyBonusAmount = parseInt(d.daily_bonus_amount) || 20;
+        document.getElementById("dailyBonusAmtDisplay").innerText = dailyBonusAmount;
+      }
+      
+      document.getElementById("dailyBonusCard").style.display = "block";
+
+      // --- সোশ্যাল মিডিয়া ও সাপোর্ট লিংক প্রসেসিং মেকানিজম ---
+      // ফায়ারবেসে কোনো লিংক ফাঁকা থাকলে বা সেট না থাকলে নিচে সরাসরি আপনার দেওয়া লিংকটি ব্যাকআপ বা ডাইরেক্ট হ্যান্ডেল হবে।
+      let waLink = d.links && d.links.wa ? "https://wa.me/" + d.links.wa : "https://wa.me/+8801700000000"; // হোয়াটসঅ্যাপ ব্যাকআপসহ
+      let tgLink = "https://t.me/farhadff11"; // আপনার দেওয়া ডাইরেক্ট টেলিগ্রাম লিংক
+      let fbLink = d.links && d.links.fb ? d.links.fb : "https://facebook.com"; 
+      let tiktokLink = "https://www.tiktok.com/@farhad2714"; // আপনার দেওয়া ডাইরেক্ট টিকটক লিংক
+      let ytLink = d.links && d.links.yt ? d.links.yt : "https://youtube.com";
+
+      document.getElementById("waSupport").href = waLink;
+      document.getElementById("tgGroup").href = tgLink;
+      document.getElementById("fbLink").href = fbLink;
+      document.getElementById("tiktokLink").href = tiktokLink;
+      document.getElementById("ytLink").href = ytLink;
+
+      if(d.banners) {
+        if(d.banners.b1) document.getElementById("b1").style.backgroundImage = `url(${d.banners.b1})`;
+        if(d.banners.b2) document.getElementById("b2").style.backgroundImage = `url(${d.banners.b2})`;
+        if(d.banners.b3) document.getElementById("b3").style.backgroundImage = `url(${d.banners.b3})`;
+      }
+    }
+  });
+  db.ref('tasks').on('value', s => { taskConfigs = s.val() || {}; updateTaskStatus(); });
+  db.ref('app_pkgs').on('value', s => { diamondPkgs = []; s.forEach(child => { diamondPkgs.push(child.val()); }); if(currentTab === "diamond") renderRedeemPackages(); });
+  db.ref('money_pkgs').on('value', s => { moneyPkgs = []; s.forEach(child => { moneyPkgs.push(child.val()); }); if(currentTab === "money") renderRedeemPackages(); });
+}
+
+function checkDailyBonusStatus() {
+  db.ref(`users/${currentUID}/lastDailyBonus`).on('value', s => {
+    const lastClaimDate = s.val();
+    const todayStr = new Date().toLocaleDateString("en-US", {timeZone: "Asia/Dhaka"});
+    let btn = document.getElementById("btnDailyBonus");
+    let statusText = document.getElementById("statusDailyBonus");
+    const dict = localizationSchema[currentLang];
+
+    if (lastClaimDate === todayStr) {
+      if(btn) btn.disabled = true;
+      if(btn) btn.innerText = "CLAIMED ✓";
+      if(statusText) statusText.innerText = dict.status_bonus_wait;
+    } else {
+      if(btn) btn.disabled = false;
+      if(btn) btn.innerText = `${dict.watch_ad} (${dailyBonusAmount} 💎)`;
+      if(statusText) statusText.innerText = dict.status_bonus_claim;
+    }
+  });
+}
+
+function claimDailyBonus() {
+  if (!isServerOnline) return alert("সচল ইন্টারনেট কানেকশন প্রয়োজন!");
+  document.getElementById("btnDailyBonus").disabled = true;
+
+  db.ref('.info/serverTimeOffset').once('value', snapshot => {
+    const offset = snapshot.val() || 0;
+    const serverTime = new Date(Date.now() + offset);
+    const bdTodayStr = serverTime.toLocaleDateString("en-US", {timeZone: "Asia/Dhaka"});
+
+    db.ref(`users/${currentUID}/lastDailyBonus`).once('value', s => {
+      if(s.val() === bdTodayStr) {
+        alert("আপনি ইতিমধ্যে আজ বোনাস ক্লেইম করেছেন!");
+        checkDailyBonusStatus();
+        return;
+      }
+
+      isDailyBonusMode = true;
+      adLoadSuccess = true; 
+      let timeLeft = 30;
+
+      document.getElementById("adIframe").style.display = "none";
+      document.getElementById("adIframe").src = "";
+      document.getElementById("adLoadingFallback").style.display = "block";
+
+      document.getElementById("adOverlay").style.display = "flex"; 
+      document.getElementById("closeAdBtn").style.display = "none"; 
+      document.getElementById("timerBox").style.display = "block"; 
+      document.getElementById("adTimerDisplay").innerText = timeLeft;
+      
+      let t = setInterval(() => { 
+        timeLeft--; 
+        document.getElementById("adTimerDisplay").innerText = timeLeft; 
+        if (timeLeft <= 0) { 
+          clearInterval(t); 
+          document.getElementById("timerBox").style.display = "none"; 
+          document.getElementById("closeAdBtn").style.display = "flex"; 
+        } 
+      }, 1000);
+    });
+  });
+}
+
+function updateNoticeText() {
+  const noticeEl = document.getElementById("redeemNotice");
+  if(!noticeEl) return;
+  if(currentTab === "diamond") noticeEl.innerText = isRedeemOpen ? (currentLang === "bn" ? "পছন্দের ডায়মন্ড প্যাক সিলেক্ট করে রিডিম করুন।" : "Select your desired diamond pack to redeem.") : "⚠️ " + adminMsg;
+  else noticeEl.innerText = isMoneyOpen ? (currentLang === "bn" ? "পছন্দের টাকার প্যাক সিলেক্ট করে রিডিম করুন।" : "Select your preferred money payout to redeem.") : "⚠️ " + moneyMsg;
+}
+
+function renderRedeemPackages() {
+  const grid = document.getElementById("redeemGrid"); grid.innerHTML = "";
+  let targetList = (currentTab === "diamond") ? diamondPkgs : moneyPkgs;
+  targetList.forEach(p => {
+    grid.innerHTML += `<div class="redeem-card" onclick="openModal(${p.cost}, '${p.name}', '${p.amount || '0'}', '${currentTab}')">
+      <span class="cost-val">💎 ${p.cost}</span><span class="pkg-name">${p.name}</span>
+      <span class="reward-tag">${currentTab === 'money' ? (currentLang === 'bn' ? 'টাকা: ' : 'Cash: ') : (currentLang === 'bn' ? 'ডায়মন্ড: ' : 'Diamond: ')}${p.amount || ''}</span>
+    </div>`;
+  });
+  if(grid.innerHTML === "") grid.innerHTML = `<p style='grid-column: span 2; font-size:14px; color:#aaa; margin-top:20px;'>কোনো প্যাকেজ পাওয়া যায়নি!</p>`;
+}
+
+function switchRedeemTab(tab) { currentTab = tab; document.getElementById("tabDiamond").classList.remove("active"); document.getElementById("tabMoney").classList.remove("active"); if (tab === 'diamond') document.getElementById("tabDiamond").classList.add("active"); else document.getElementById("tabMoney").classList.add("active"); updateNoticeText(); renderRedeemPackages(); }
+function updateTaskStatus() { db.ref(`users/${currentUID}/task_logs`).on('value', s => { latestTaskLogs = s.val() || {}; refreshButtonsUI(); }); }
+
+function refreshButtonsUI() {
+  const today = new Date().toDateString();
+  const dict = localizationSchema[currentLang];
+  [1, 2, 3, 4, 5].forEach(id => {
+    const config = taskConfigs[`t${id}`] || { limit:10 }; const log = latestTaskLogs[`t${id}`] || { count: 0, date: "" }; let count = log.date === today ? log.count : 0;
+    const statEl = document.getElementById(`statusTask${id}`);
+    if(statEl) statEl.innerText = `${dict.today}: ${count}/${config.limit}`; 
+    let btn = document.getElementById(`btnTask${id}`);
+    if(btn) {
+      if (count >= config.limit) { btn.disabled = true; btn.innerText = dict.limit_reached; } 
+      else if (!activeCooldowns[id]) { btn.disabled = false; btn.innerText = `${dict.watch_now} (10 💎)`; }
+    }
+  });
+}
+
+function handleTask(id) {
+  if(!isServerOnline) { alert(localizationSchema[currentLang].net_title); return; }
+  if(activeCooldowns[id]) return;
+  
+  isDailyBonusMode = false;
+  currentTaskId = id; 
+  
+  const targetButton = document.getElementById(`btnTask${id}`);
+  const adIframe = document.getElementById("adIframe");
+  const loadingFallback = document.getElementById("adLoadingFallback");
+  const overlay = document.getElementById("adOverlay");
+  const timerBox = document.getElementById("timerBox");
+  const closeBtn = document.getElementById("closeAdBtn");
+
+  if(id === 2) {
+    if(targetButton) {
+      targetButton.disabled = true;
+      targetButton.innerText = "Loading Ad... ⏳";
+    }
+
+    adIframe.src = "https://www.effectivecpmnetwork.com/tmbubbx8i?key=c3619d9cdf64d92a41138ab5e99f5ec4";
+    adIframe.style.display = "none"; 
+    loadingFallback.style.display = "block"; 
+    timerBox.style.display = "none"; 
+    closeBtn.style.display = "none";
+    
+    adIframe.onload = function() {
+      adLoadSuccess = true;
+      overlay.style.display = "flex";
+      adIframe.style.display = "block"; 
+      loadingFallback.style.display = "none"; 
+      timerBox.style.display = "block"; 
+      
+      let timeLeft = 30;
+      document.getElementById("adTimerDisplay").innerText = timeLeft;
+      
+      if(window.activeAdInterval) clearInterval(window.activeAdInterval);
+      
+      window.activeAdInterval = setInterval(() => { 
+        timeLeft--; 
+        document.getElementById("adTimerDisplay").innerText = timeLeft; 
+        if (timeLeft <= 0) { 
+          clearInterval(window.activeAdInterval); 
+          timerBox.style.display = "none"; 
+          closeBtn.style.display = "flex"; 
+        } 
+      }, 1000);
+      
+      adIframe.onload = null; 
+    };
+
+    setTimeout(() => {
+      if(targetButton && targetButton.innerText === "Loading Ad... ⏳") {
+        overlay.style.display = "flex";
+        adIframe.style.display = "block";
+        loadingFallback.style.display = "none";
+        timerBox.style.display = "block";
+        adLoadSuccess = true;
+      }
+    }, 5000);
+
+  } else {
+    adLoadSuccess = true;
+    let timeLeft = 30;
+    adIframe.src = "";
+    adIframe.style.display = "none";
+    loadingFallback.style.display = "block";
+    
+    overlay.style.display = "flex"; 
+    closeBtn.style.display = "none"; 
+    timerBox.style.display = "block"; 
+    document.getElementById("adTimerDisplay").innerText = timeLeft;
+    
+    if(window.activeAdInterval) clearInterval(window.activeAdInterval);
+    
+    window.activeAdInterval = setInterval(() => { 
+      timeLeft--; 
+      document.getElementById("adTimerDisplay").innerText = timeLeft; 
+      if (timeLeft <= 0) { 
+        clearInterval(window.activeAdInterval); 
+        timerBox.style.display = "none"; 
+        closeBtn.style.display = "flex"; 
+      } 
+    }, 1000);
+  }
+}
+
+function finishAd() {
+  if(window.activeAdInterval) clearInterval(window.activeAdInterval);
+  if (!isServerOnline || !adLoadSuccess) { alert("Network Error / Ad failed."); document.getElementById("adOverlay").style.display = "none"; return; }
+  
+  document.getElementById("adIframe").src = "";
+
+  if (isDailyBonusMode) {
+    db.ref('.info/serverTimeOffset').once('value', snapshot => {
+      const offset = snapshot.val() || 0;
+      const serverTime = new Date(Date.now() + offset);
+      const bdTodayStr = serverTime.toLocaleDateString("en-US", {timeZone: "Asia/Dhaka"});
+
+      db.ref(`users/${currentUID}/diamonds`).transaction(current => (current || 0) + dailyBonusAmount, (error, committed) => {
+        if (committed) {
+          db.ref(`users/${currentUID}/lastDailyBonus`).set(bdTodayStr);
+          alert(`Success! Bonus +${dailyBonusAmount} Diamonds.`);
+        }
+        isDailyBonusMode = false;
+        document.getElementById("adOverlay").style.display = "none";
+        checkDailyBonusStatus();
+      });
+    });
+    return;
+  }
+
+  db.ref('users/' + currentUID + '/diamonds').transaction(c => (c || 0) + 10);
+  
+  const today = new Date().toDateString(); const logRef = db.ref(`users/${currentUID}/task_logs/t${currentTaskId}`);
+  logRef.once('value', s => { let data = s.val() || { count: 0, date: today }; logRef.update({ count: (data.date === today ? data.count + 1 : 1), date: today }); });
+  
+  db.ref('users/' + currentUID).once('value', s => {
+    const userData = s.val() || {};
+    if (userData.referredBy && userData.referTaskCount < 10) {
+      let nextCount = userData.referTaskCount + 1;
+      if (nextCount === 10) {
+        db.ref('users/' + userData.referredBy).once('value', ps => {
+          if (ps.exists() && (ps.val().referCount || 0) < 10) {
+            const bdDateStr = new Date().toLocaleDateString("en-US", {timeZone: "Asia/Dhaka"});
+            
+            db.ref(`users/${userData.referredBy}/inbox_messages`).push({
+              title: "Referral Bonus Success!",
+              message: `Your referral code was successfully executed by UID: ${currentUID}.`,
+              giftDiamonds: referrerBonusAmt,
+              isClaimed: false,
+              date: bdDateStr
+            });
+            
+            db.ref(`users/${currentUID}/inbox_messages`).push({
+              title: "Referral Applied Reward!",
+              message: `You earned referral completion bonus for finishing your tasks!`,
+              giftDiamonds: refereeBonusAmt,
+              isClaimed: false,
+              date: bdDateStr
+            });
+
+            db.ref('users/' + userData.referredBy).update({ referCount: (ps.val().referCount || 0) + 1 });
+            
+            db.ref(`users/${userData.referredBy}/my_referrals/${currentUID}`).set({
+              uid: currentUID,
+              taskCount: 10,
+              claimed: false
+            });
+          }
+        });
+      } else {
+        if (userData.referredBy) {
+          db.ref(`users/${userData.referredBy}/my_referrals/${currentUID}`).set({
+            uid: currentUID,
+            taskCount: nextCount,
+            claimed: false
+          });
+        }
+      }
+      db.ref('users/' + currentUID).update({ referTaskCount: nextCount });
+    }
+  });
+  
+  adLoadSuccess = false; 
+  document.getElementById("adOverlay").style.display = "none"; 
+  document.getElementById("timerBox").style.display = "block"; 
+  startCooldown(currentTaskId);
+}
+
+function startCooldown(taskId) { activeCooldowns[taskId] = true; let btn = document.getElementById(`btnTask${taskId}`); if(!btn) return; btn.disabled = true; let rem = 10; let cd = setInterval(() => { rem--; btn.innerText = `${localizationSchema[currentLang].wait} ${rem}s`; if (rem <= 0) { clearInterval(cd); activeCooldowns[taskId] = false; refreshButtonsUI(); } }, 1000); }
+
+function openModal(cost, pkg, price, type) {
+  if(!isServerOnline) return;
+  if (type === 'diamond' && !isRedeemOpen) return alert(adminMsg); if (type === 'money' && !isMoneyOpen) return alert(moneyMsg); if (userDiamonds < cost) return alert("পর্যাপ্ত ডায়মন্ড নেই!");
+  selCost = cost; selPkg = pkg; selPrice = price; selType = type;
+  document.getElementById("pkgTitle").innerText = pkg; const inputEl = document.getElementById("targetAccountInput"); const noticeEl = document.getElementById("modalInputNotice");
+  const dict = localizationSchema[currentLang];
+  if(type === 'money') { noticeEl.innerText = dict.modal_notice_money; inputEl.placeholder = dict.modal_placeholder_money; } 
+  else { noticeEl.innerText = dict.modal_notice_diamond; inputEl.placeholder = dict.modal_placeholder_ff; }
+  inputEl.value = ""; document.getElementById("redeemModal").style.display = "flex";
+}
+
+function confirmRedeem() {
+  if(!isServerOnline) return;
+  const targetAccount = document.getElementById("targetAccountInput").value.trim();
+  if(!targetAccount) return alert("দয়া করে সঠিক তথ্য দিন!");
+  const bdTime = new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"});
+  db.ref('users/' + currentUID + '/diamonds').transaction(c => { if (c >= selCost) return c - selCost; }, (err, done) => {
+    if (done) {
+      let requestNode = (selType === 'money') ? 'money_requests' : 'all_requests';
+      db.ref(requestNode).push({ uid: currentUID, package: selPkg, cost: selCost, price: selPrice, status: 'Pending', redeemTime: bdTime, number: targetAccount, timestamp: firebase.database.ServerValue.TIMESTAMP });
+      alert("রিকোয়েস্ট সফল হয়েছে!"); closeModal();
+    }
+  });
+}
+
+function openHistory() {
+  if(!isServerOnline) return;
+  document.getElementById("historyPage").style.display = "block"; 
+  const hList = document.getElementById("userHistoryList"); 
+  hList.innerHTML = "<p style='text-align:center;color:#aaa;'>Loading History...</p>";
+  
+  let allRequests = [];
+  
+  db.ref('all_requests').orderByChild('uid').equalTo(currentUID).once('value', s1 => {
+    s1.forEach(child => {
+      let val = child.val();
+      val.type = 'Diamond';
+      allRequests.push(val);
+    });
+    
+    db.ref('money_requests').orderByChild('uid').equalTo(currentUID).once('value', s2 => {
+      s2.forEach(child => {
+        let val = child.val();
+        val.type = 'Money';
+        allRequests.push(val);
+      });
+      
+      allRequests.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      hList.innerHTML = "";
+      
+      if(allRequests.length === 0) {
+        hList.innerHTML = "<p style='text-align:center;color:#aaa;'>কোনো হিস্ট্রি পাওয়া যায়নি।</p>";
+        return;
+      }
+      
+      allRequests.forEach(item => {
+        let successClass = item.status === 'Success' ? 'status-success' : '';
+        hList.innerHTML += `
+          <div class="history-item">
+            <div class="pkg-info">
+              <b>${item.package} (${item.type})</b>
+              <span class="status-badge ${successClass}">${item.status}</span>
+            </div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:5px;">
+              Number/UID: ${item.number}<br>
+              Cost: 💎 ${item.cost} | Time: ${item.redeemTime}
+            </div>
+          </div>`;
+      });
+    });
+  });
+}
+
+function listenToInboxMessages() {
+  db.ref(`users/${currentUID}/inbox_messages`).on('value', s => {
+    const container = document.getElementById("noticeListContainer");
+    const badge = document.getElementById("emailNoticeBadge");
+    container.innerHTML = "";
+    
+    let unreadCount = 0;
+    let hasMessages = false;
+
+    s.forEach(child => {
+      hasMessages = true;
+      let msgId = child.key;
+      let m = child.val();
+      if(!m.isClaimed) unreadCount++;
+
+      let giftSection = "";
+      if(m.giftDiamonds && !m.isClaimed) {
+        giftSection = `<br><span class="gift-badge">Gift: 💎 ${m.giftDiamonds}</span><br>
+                       <button class="refer-claim-btn" onclick="claimInboxGift('${msgId}', ${m.giftDiamonds})">Claim Gift</button>`;
+      } else if (m.giftDiamonds && m.isClaimed) {
+        giftSection = `<br><span class="gift-badge" style="background:#555;">Claimed ✓</span>`;
+      }
+
+      container.innerHTML += `
+        <div class="notice-item">
+          <button class="delete-notice-btn" onclick="deleteInboxMsg('${msgId}')">✕</button>
+          <h4>${m.title}</h4>
+          <p>${m.message}</p>
+          <small style="color:#777; font-size:10px;">${m.date || ''}</small>
+          ${giftSection}
+        </div>`;
+    });
+
+    if(!hasMessages) {
+      container.innerHTML = `<p style="text-align:center; color:#aaa; font-size:13px;">${localizationSchema[currentLang].inbox_empty}</p>`;
+    }
+    
+    if(badge) {
+      if(unreadCount > 0) badge.style.display = "block";
+      else badge.style.display = "none";
+    }
+  });
+}
+
+function claimInboxGift(msgId, amount) {
+  if(!isServerOnline) return;
+  db.ref(`users/${currentUID}/diamonds`).transaction(c => (c || 0) + amount, (err, done) => {
+    if(done) {
+      db.ref(`users/${currentUID}/inbox_messages/${msgId}`).update({ isClaimed: true });
+      alert("Gift claimed successfully!");
+    }
+  });
+}
+
+function deleteInboxMsg(msgId) {
+  if(!isServerOnline || !confirm("Are you sure you want to delete this mail?")) return;
+  db.ref(`users/${currentUID}/inbox_messages/${msgId}`).remove();
+}
+
+function listenToMyReferrals() {
+  db.ref(`users/${currentUID}/my_referrals`).on('value', s => {
+    const listContainer = document.getElementById("myReferralsListContainer");
+    listContainer.innerHTML = "";
+    let hasRef = false;
+
+    s.forEach(child => {
+      hasRef = true;
+      let refData = child.val();
+      listContainer.innerHTML += `
+        <div class="refer-item">
+          <div>
+            <span class="refer-item-uid">UID: ${refData.uid}</span><br>
+            <span class="refer-item-task">Tasks Done: ${refData.taskCount}/10</span>
+          </div>
+        </div>`;
+    });
+
+    if(!hasRef) {
+      listContainer.innerHTML = `<p style="text-align:center; color:#aaa; font-size:13px; margin: 10px 0;">${localizationSchema[currentLang].refer_empty}</p>`;
+    }
+  });
+}
+</script>
+</body>
+</html>
